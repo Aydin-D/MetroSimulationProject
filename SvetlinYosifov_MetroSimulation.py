@@ -61,23 +61,40 @@ class MetroAgi: #MetroAgi sınıfı oluşturuldu amacı istasyonları ve hatlar�
 
 
         # A* algoritması kullanarak en hızlı rotayı bulan fonksiyon ile en hızlı rota bulundu
+    
     def en_hizli_rota_bul(self, baslangic_id: str, hedef_id: str) -> Optional[Tuple[List[Istasyon], int]]:
+        """
+        A* algoritmasını kullanarak en hızlı rotayı bulur.
+        Heuristic fonksiyon olarak sabit 0 değeri veya gelecekte eklenecek özel bir hesaplama kullanılabilir.
+        """
         if baslangic_id not in self.istasyonlar or hedef_id not in self.istasyonlar: #başlangıç ve hedef istasyonlar kontrol edildi
-            return None #başlangıç ve hedef istasyonlar yoksa None döndürüldü
-        baslangic = self.istasyonlar[baslangic_id]  #başlangıç istasyonu belirlendi
+            return None
+
+        baslangic = self.istasyonlar[baslangic_id] #başlangıç istasyonu belirlendi
         hedef = self.istasyonlar[hedef_id] #hedef istasyonu belirlendi
-        ziyaret_edildi = set()  #ziyaret edilen istasyonlar set yapısında oluşturuldu
-        pq = [(0, id(baslangic), baslangic, [baslangic])] #öncelik kuyruğu oluşturuldu
-        while pq: #öncelik kuyruğu boş olana kadar döngü çalıştı
-            toplam_sure, _, istasyon, rota = heapq.heappop(pq) #öncelik kuyruğundan istasyon ve rota çekildi
-            if istasyon == hedef: #eğer istasyon hedefe eşitse rota ve toplam süre döndürüldü  
-                return rota, toplam_sure 
-            if id(istasyon) in ziyaret_edildi: #eğer istasyon ziyaret edildiyse döngü devam etti
+
+        def heuristic(istasyon: Istasyon, hedef: Istasyon) -> int:  #heuristic fonksiyonu oluşturuldu
+            return 0  # Şu anlık heuristik fonksiyonu sabit 0   
+
+        open_set = [(0 + heuristic(baslangic, hedef), 0, id(baslangic), baslangic, [baslangic])] #öncelik kuyruğu oluşturuldu
+        ziyaret_edildi = set() #ziyaret edilen istasyonlar set yapısında oluşturuldu
+
+        while open_set: #öncelik kuyruğu boş olana kadar döngü çalıştı
+            _, toplam_sure, _, mevcut, rota = heapq.heappop(open_set)   #öncelik kuyruğundan istasyon ve rota çekildi
+
+            if mevcut == hedef:     #eğer mevcut istasyon hedefe eşitse rota ve toplam süre döndürüldü
+                return rota, toplam_sure   
+
+            if id(mevcut) in ziyaret_edildi: #eğer mevcut istasyon ziyaret edildiyse döngü devam etti
                 continue
-            ziyaret_edildi.add(id(istasyon)) #ziyaret edilen istasyonlar set yapısına eklendi   
-            for komsu, sure in istasyon.komsular: #komsular ve süreler döngü ile gezildi
-                if id(komsu) not in ziyaret_edildi: #eğer komşu ziyaret edilmediyse öncelik kuyruğuna eklendi
-                    heapq.heappush(pq, (toplam_sure + sure, id(komsu), komsu, rota + [komsu])) 
+            ziyaret_edildi.add(id(mevcut))
+
+            for komsu, sure in mevcut.komsular: #komsular ve süreler döngü ile gezildi
+                if id(komsu) not in ziyaret_edildi: #eğer komşu ziyaret edilmediyse
+                    yeni_toplam_sure = toplam_sure + sure #yeni toplam süre hesaplandı
+                    tahmini_toplam = yeni_toplam_sure + heuristic(komsu, hedef) #tahmini toplam süre hesaplandı formül: f(n) = g(n) + h(n)
+                    heapq.heappush(open_set, (tahmini_toplam, yeni_toplam_sure, id(komsu), komsu, rota + [komsu])) #öncelik kuyruğuna eklendi
+
         return None
     
 if __name__ == "__main__": 
